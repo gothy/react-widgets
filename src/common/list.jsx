@@ -27,8 +27,7 @@ module.exports = React.createClass({
   displayName: 'List',
 
   mixins: [ 
-    require('../mixins/DataHelpersMixin'),
-    require('../mixins/VirtualScrollMixin')
+    require('../mixins/DataHelpersMixin')
   ],
 
   propTypes: {
@@ -56,11 +55,14 @@ module.exports = React.createClass({
     }
   },
 
+  componentDidMount: function(prevProps, prevState){
+    this._setScrollPosition()
+  },
+
   componentDidUpdate: function(prevProps, prevState){
     if ( prevProps.focusedIndex !== this.props.focusedIndex)
       this._setScrollPosition()
   },
-
 
 	render: function(){
     var self = this
@@ -93,12 +95,6 @@ module.exports = React.createClass({
       );
     })
       
-    // if ( this.state.displayStart !== 0)
-    //   items.unshift(<li key='top_pl' style={{height: this.state.displayStart * this.props.itemHeight}}/>);
-
-    // if ( this.state.displayEnd !== (this.props.data.length - 1))
-    //   items.push(<li key='bottom_pl' style={{height:  (this.props.data.length - this.state.displayEnd) * this.props.itemHeight}}/>);
-
 		return mergeIntoProps(
       _.omit(this.props, 'data', 'selectedIndex'),
 			<ul 
@@ -107,6 +103,7 @@ module.exports = React.createClass({
         role='listbox'
         tabIndex={this.props.tabIndex || -1}
         onScroll={this.props.itemHeight && _.throttle(this.onScroll, 10)}>
+
         { !this.props.data.length 
           ? emptyList 
           : items }
@@ -120,22 +117,14 @@ module.exports = React.createClass({
 
   _setScrollPosition: function(){
     var list = this.getDOMNode()
-      , virtual = !!this.props.itemHeight
       , selected = list.children[this.props.focusedIndex]
       , scrollTop, listHeight, selectedTop, selectedHeight, bottom;
-
-    if (!virtual && !selected) return
 
     scrollTop   = list.scrollTop
     listHeight  = list.clientHeight
 
-    selectedTop =  virtual 
-      ? (this.props.focusedIndex * this.props.itemHeight) 
-      : selected.offsetTop
-
-    selectedHeight = virtual 
-      ? this.props.itemHeight 
-      : selected.offsetHeight
+    selectedTop =  selected.offsetTop
+    selectedHeight = selected.offsetHeight
 
     bottom =  selectedTop + selectedHeight
 

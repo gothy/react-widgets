@@ -74,10 +74,6 @@ module.exports = React.createClass({
     }
   },
 
-  componentDidUpdate: function() {
-    this.setTimeDimensions()
-  },
-
   render: function(){
     var self = this
       , id   = this.props.id
@@ -134,11 +130,7 @@ module.exports = React.createClass({
           }
         </span>
         { this.props.time &&
-        <Popup 
-          getAnchor={ this._getAnchor } 
-          style={{ width:  this.state.width }}
-          open={this.state.open && this.state.openPopup === 'time'} 
-          onRequestClose={this.close}>
+        <Popup open={this.state.open && this.state.openPopup === 'time'} onRequestClose={this.close}>
             <div>
               <Time ref="timePopup" 
                 id={timeListID}
@@ -154,9 +146,8 @@ module.exports = React.createClass({
         </Popup>
         }
         { this.props.calendar &&
-          <Popup 
-            getAnchor={ this._getAnchor } 
-            style={{ width: 200 }} 
+          <Popup  
+            className='rw-calendar-popup' 
             open={this.state.open && this.state.openPopup === 'calendar'} 
             onRequestClose={this.close}>
 
@@ -164,6 +155,7 @@ module.exports = React.createClass({
               _.pick(this.props, _.keys(Calendar.type.propTypes)),
               <Calendar ref="calPopup"   
                 id={dateListID}
+                value={this.props.value || new Date }
                 maintainFocus={false}
                 aria-hidden={ !this.state.open }
                 onChange={this._selectDate}/>
@@ -172,16 +164,6 @@ module.exports = React.createClass({
         }
       </div>
     )
-  },
-
-  setTimeDimensions: function() {
-    if( !this.props.time) return
-
-    var width = $.width(this.getDOMNode())
-      , changed = width !== this.state.width;
-
-    if ( changed )
-      this.setState({ width: width }) 
   },
 
   _keyDown: function(e){
@@ -267,10 +249,6 @@ module.exports = React.createClass({
 
   close: function(){
     this.setState({ open: false })
-  },
-
-  _getAnchor: function(){
-    return this.refs.element.getDOMNode()
   }
 
 });

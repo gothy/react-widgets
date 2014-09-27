@@ -107,11 +107,11 @@ module.exports = React.createClass({
   },
 
   componentDidUpdate: function(prevProps, prevState){
-    var input = this.refs.input.getDOMNode()
-      , val = this._dataText(this.props.value);
+    var val = this._dataText(this.props.value);
 
-    this.state.focused && input.focus()
-    this.setWidth()
+    this.state.focused && this.refs.input.getDOMNode().focus()
+    
+    //if( this.state.open) this.setWidth()
   },
 
 	render: function(){ 
@@ -157,12 +157,7 @@ module.exports = React.createClass({
           onChange={this._inputTyping}
           onKeyDown={this._inputKeyDown}/>
 
-        <Popup 
-          style={{ width: this.state.width }}
-          getAnchor={ this._getAnchor } 
-          open={this.state.open} 
-          onRequestClose={this.close}>
-          
+        <Popup open={this.state.open} onRequestClose={this.close}> 
           <div>
             <List ref="list"
               id={listID}
@@ -334,10 +329,6 @@ module.exports = React.createClass({
     }
   },
 
-	_getAnchor: function(){
-		return this.refs.element.getDOMNode()
-	},
-
   _data: function(){
     return this.state.processedData
   },
@@ -348,5 +339,5 @@ module.exports = React.createClass({
       data =  _.filter(data, this.matcher(searchTerm))
 
     return data
-  },
+  }
 })
