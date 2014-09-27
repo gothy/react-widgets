@@ -16,9 +16,9 @@ var DefaultListItem = React.createClass({
   ],
 
   render: function(){
-      var item = this.props.item;
+    var item = this.props.item;
 
-      return this.transferPropsTo(<li>{ item ? this._dataText(item) : '' }</li>)
+    return this.transferPropsTo(<li>{ item ? this._dataText(item) : '' }</li>)
   }
 })
 
@@ -27,7 +27,8 @@ module.exports = React.createClass({
   displayName: 'List',
 
   mixins: [ 
-    require('../mixins/DataHelpersMixin')
+    require('../mixins/DataHelpersMixin'),
+    require('../mixins/VirtualScrollMixin')
   ],
 
   propTypes: {
@@ -60,8 +61,16 @@ module.exports = React.createClass({
   },
 
   componentDidUpdate: function(prevProps, prevState){
-    if ( prevProps.focusedIndex !== this.props.focusedIndex)
-      this._setScrollPosition()
+    var self = this
+
+    setTimeout(function(){
+      if ( self._shouldResetScroll || prevProps.focusedIndex !== self.props.focusedIndex)  
+        self._setScrollPosition()
+    }, 0)
+  },
+
+  componentWillReceiveProps: function(prevProps, prevState){
+    this._shouldResetScroll = true
   },
 
 	render: function(){
@@ -117,22 +126,33 @@ module.exports = React.createClass({
 
   _setScrollPosition: function(){
     var list = this.getDOMNode()
+      , virtual = !!this.props.itemHeight
       , selected = list.children[this.props.focusedIndex]
       , scrollTop, listHeight, selectedTop, selectedHeight, bottom;
+
+    this._shouldResetScroll = false
+    if (!virtual && !selected) return
 
     scrollTop   = list.scrollTop
     listHeight  = list.clientHeight
 
-    selectedTop =  selected.offsetTop
-    selectedHeight = selected.offsetHeight
+    selectedTop =  virtual 
+      ? (this.props.focusedIndex * this.props.itemHeight) 
+      : selected.offsetTop
+
+    selectedHeight = virtual 
+      ? this.props.itemHeight 
+      : selected.offsetHeight
 
     bottom =  selectedTop + selectedHeight
 
-    list.scrollTop = scrollTop > selectedTop
+    scrollTop = scrollTop > selectedTop
       ? selectedTop
       : bottom > (scrollTop + listHeight) 
           ? (bottom - listHeight)
-          : scrollTop
+          : scrollTop;
+
+    list.scrollTop = scrollTop
   }
 
 })

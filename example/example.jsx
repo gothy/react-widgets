@@ -76,19 +76,13 @@ var App = React.createClass({
 							busy={false}
 							virtualScroll={{
 								initialItems: 20,
-								itemHeight: 18
+								itemHeight: 20
 							}}
 							value={ this.state.comboboxValue} 
 							onChange={change.bind(null, 'comboboxValue')}/>
 					</section>
 					<section className="example" style={{ marginBottom: 20 }}>
-						<CheckBoxList 
-							isRtl={false}
-							data={ this.state.data } 
-							textField='name'
-							valueField='id'
-							value={ this.state.selectValues } 
-							onChange={change.bind(null, 'selectValues')}/>
+
 					</section>
 
 					<section className="example" style={{ marginBottom: 20 }}>
@@ -99,10 +93,7 @@ var App = React.createClass({
 							textField='name'
 							valueField='id'
 							value={ this.state.selectValues } 
-							virtualScroll={{
-								initialItems: 50,
-								itemHeight: 18
-							}}
+
 							tagComponent={ListItem}
 							itemComponent={ListItem}
 							onChange={change.bind(null, 'selectValues')}/>
@@ -158,3 +149,10 @@ function generateList(){
 }
 
 					
+							// 				<CheckBoxList 
+							// isRtl={false}
+							// data={ this.state.data } 
+							// textField='name'
+							// valueField='id'
+							// value={ this.state.selectValues } 
+							// onChange={change.bind(null, 'selectValues')}/>

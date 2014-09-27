@@ -4,13 +4,6 @@ var React = require('react')
 
 module.exports = {
   
-    
-  // shouldComponentUpdate: function(nextProps, nextState) {
-  //   var dataChanged = (nextProps.data.length !== this.props.data.length);
-
-  //   console.log('update: ', dataChanged || nextState.outOfRange)
-  //   return dataChanged || nextState.outOfRange
-  // },
   propTypes: {
     itemHeight:    React.PropTypes.number,
     initialItems:  React.PropTypes.number,
@@ -46,8 +39,15 @@ module.exports = {
       })
   },
 
+  // componentDidUpdate: function(){
+  //   var self = this
+  //     , node = this.refs.scrollable.getDOMNode()
+
+  //   if( node.scrollTop !== self.state.scrollTop )
+  //     debugger       
+  // },
   componentWillReceiveProps: function(nextProps){
-    //console.log('update: ', this.props.data.length !== nextProps.data.length)
+    
     this.scrollState(
         this.state.scrollTop
       , nextProps
