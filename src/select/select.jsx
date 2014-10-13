@@ -1,8 +1,8 @@
 'use strict';
 var React = require('react')
   , cx = require('../util/cx')
-  , _     =  require('lodash')
-  , $     =  require('../util/dom')
+  , _  =  require('lodash')
+  , $  =  require('../util/dom')
   , directions = require('../util/constants').directions
   , inputControl = require('../util/inputControl')
   , defaultFromProps = inputControl.defaultFromProps
@@ -67,10 +67,10 @@ module.exports = React.createClass({
 
   propTypes: propTypes,
 
-  controlledValuesHandlerMap: {
-    onOpen:   'open',
-    onClose:  'open',
-    onSearch: 'searchTerm'
+  controlledValues: {
+    value:      'onChange',
+    open:       'onToggle',
+    searchTerm: 'onSearch',
   },
 
   getDefaultProps: function(){
@@ -86,16 +86,17 @@ module.exports = React.createClass({
   },
 
   getInitialState: function(){
-    var values = this.props.value == null ? [] : [].concat(this.props.value)
+    var defaults  = this.controlledDefaults()
+      , values    = this.getValue('value', this.props, defaults)
       , dataItems =  _.map(values, _.bind(this._dataItem, this, this.props.data))
 
-    return inputControl.defaults(this.props,
+    return _.defaults(defaults,
       {
-        open:       false,
-        searchTerm: '',
+        open:          false,
+        searchTerm:    '',
         processedData: this.process(this.props.data, values, ''),
         focusedIndex:  0,
-        dataItems: dataItems
+        dataItems:     dataItems
       })
   },
 
@@ -104,13 +105,11 @@ module.exports = React.createClass({
       , items = this.process(
           nextProps.data
         , nextProps.value
-        , this.get('searchTerm', nextProps))
+        , this.getValue('searchTerm', nextProps))
 
     this.setState({
       processedData: items,
-      dataItems: _.map(values, function(item){
-        return this._dataItem(nextProps.data, item)
-      }, this)
+      dataItems: _.map(values, _.bind(this._dataItem, this, nextProps.data))
     })
   },
 
@@ -120,7 +119,7 @@ module.exports = React.createClass({
       , optID   = this._id('_option')
       , items   = this._data()
       , values  = this.state.dataItems
-      , isOpen  = this.get('open');
+      , isOpen  = this.getValue('open');
 
     return mergeIntoProps(
       _.omit(this.props, _.keys(propTypes)),
@@ -158,7 +157,7 @@ module.exports = React.createClass({
             aria-busy={!!this.props.busy}
             aria-owns={listID}
             aria-haspopup={true}
-            value={this.get('searchTerm')}
+            value={this.getValue('searchTerm')}
             disabled={this.props.disabled === true}
             readOnly={this.props.readOnly === true}
             placeholder={this._placeholder()}
@@ -201,7 +200,7 @@ module.exports = React.createClass({
 
   _click: function(e){
     this._focus(true)
-    !this.get('open') && this.open()
+    !this.getValue('open') && this.open()
   },
 
   _focus: function(focused, e){
@@ -226,17 +225,18 @@ module.exports = React.createClass({
 
   _typing: function(e){
 
-    if ( !this.notify('onSearch', [ e.target.value ]) )
+    if ( !this.setOrNotify('searchTerm', e.target.value) )
       return
 
     var items = this.process(this.props.data, this.props.value, e.target.value);
 
-    this.open()
-    this.setState({
-      searchTerm: e.target.value,
-      processedData: items,
-      focusedIndex: 0,
-    })
+    this
+      .open()
+      .setState({
+        searchTerm: e.target.value,
+        processedData: items,
+        focusedIndex: 0,
+      })
   },
 
   _onSelect: function(data){
@@ -251,8 +251,8 @@ module.exports = React.createClass({
   _keyDown: function(e){
     var key = e.key
       , alt = e.altKey
-      , searching = !!this.get('searchTerm')
-      , isOpen = this.get('open');
+      , searching = !!this.getValue('searchTerm')
+      , isOpen = this.getValue('open');
 
     if ( key === 'ArrowDown') {
       if ( isOpen ) this.setFocusedIndex(this.nextFocusedIndex())
@@ -291,23 +291,28 @@ module.exports = React.createClass({
   },
 
   change: function(data){
-    this.notify('onChange', [data])
+    this.setOrNotify('value', data)
+    return this
   },
 
   open: function(){
     var disabled = this.props.disabled === true || this.props.readOnly === true;
 
-    if ( !disabled && !this.get('open'))
-      this.notify('onOpen', undefined, { open: true })
+    if ( !disabled && !this.getValue('open'))
+      this.setOrNotify('open', true)
+
+    return this
   },
 
   close: function(){
-    if ( !!this.get('open') )
-      this.notify('onClose', undefined, { open: false })
+    if ( !!this.getValue('open') )
+      this.setOrNotify('open', false)
+
+    return this
   },
 
   toggle: function(e){
-   this.get('open')
+    return this.getValue('open')
       ? this.close()
       : this.open()
   },

@@ -71,20 +71,20 @@ module.exports = React.createClass({
 
   propTypes: propTypes,
 
-  controlledValuesHandlerMap: {
-    onOpen:   'open',
-    onClose:  'open'
+  controlledValues: {
+    value: 'onChange',
+    open:  'onToggle',
   },
 
 	getInitialState: function(){
-    var initialIdx = this._dataIndexOf(this.props.data, this.props.value);
+    var defaults   = this.controlledDefaults()
+      , initialIdx = this._dataIndexOf(this.props.data, this.props.value);
 
-		return inputControl.defaults(this.props, {
+		return _.defaults(defaults, {
 			open:          false,
       selectedIndex: initialIdx,
       focusedIndex:  initialIdx === -1 ? 0 : initialIdx,
 		})
-
 	},
 
   getDefaultProps: function(){
@@ -109,7 +109,7 @@ module.exports = React.createClass({
 		var keys = _.keys(propTypes)
       , valueItem = this._dataItem( this._data(), this.props.value )
       , optID = this._id('_option')
-      , isOpen = this.get('open');
+      , isOpen = this.getValue('open');
 
 		return mergeIntoProps(
       _.omit(this.props, keys),
@@ -167,14 +167,6 @@ module.exports = React.createClass({
 			</div>
 		)
 	},
-
-  setWidth: function() {
-    var width = $.width(this.getDOMNode())
-      , changed = width !== this.state.width;
-
-    if ( changed )
-      this.setState({ width: width })
-  },
 
   _focus: function(focused){
     var self = this;
@@ -241,16 +233,9 @@ module.exports = React.createClass({
   },
 
   change: ifValueChanges(function(data){
-    this.notify('onChange', data)
+    this.setOrNotify('value', data)
     this.close()
-  }),
-
-  change: ifValueChanges(function(data){
-    var change = this.props.onChange
-    if ( change ) {
-      change(data)
-      this.close()
-    }
+    return this
   }),
 
   _locate: function(word){
@@ -269,19 +254,23 @@ module.exports = React.createClass({
   open: function(){
     var disabled = this.props.disabled === true || this.props.readOnly === true;
 
-    if ( !disabled && !this.get('open'))
-      this.notify('onOpen', undefined, { open: true })
+    if ( !disabled && !this.getValue('open'))
+      this.setOrNotify('open', true)
+
+    return this
   },
 
   close: function(){
-    if ( !!this.get('open') )
-      this.notify('onClose', undefined, { open: false })
+    if ( !!this.getValue('open') )
+      this.setOrNotify('open', false)
+    return this
   },
 
   toggle: function(e){
-   this.get('open')
+    this.getValue('open')
       ? this.close()
       : this.open()
+    return this
   }
 
 

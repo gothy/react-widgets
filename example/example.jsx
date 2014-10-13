@@ -69,7 +69,6 @@ var App = React.createClass({
 					</section>
 					<section className="example" style={{ marginBottom: 20 }}>
 						<Calendar
-
 							value={ new Date }
 							onChange={change.bind(null, 'calValue')}/>
 					</section>
@@ -95,9 +94,11 @@ var App = React.createClass({
 							valueField='id'
 							value={ this.state.selectValues }
 							busy={false}
-							disabled={[1]}
+							disabled={false}
 							tagComponent={ListItem}
 							itemComponent={ListItem}
+							open={this.state.open}
+							onToggle={change.bind(null, 'open')}
 							onChange={change.bind(null, 'selectValues')}/>
 					</section>
 					<section className="example" style={{ marginBottom: 20 }}>
