@@ -4,6 +4,8 @@ var React = require('react')
   , _     =  require('lodash')
   , $     =  require('../util/dom')
   , directions = require('../util/constants').directions
+  , inputControl = require('../util/inputControl')
+  , defaultFromProps = inputControl.defaultFromProps
   , mergeIntoProps = require('../util/transferProps').mergeIntoProps
   , SelectInput = require('./search-input.jsx')
   , TagList = require('./tag-list.jsx')
@@ -13,11 +15,16 @@ var React = require('react')
 var btn = require('../common/btn.jsx')
   , propTypes = {
       data:           React.PropTypes.array,
-      value:          React.PropTypes.array,
+
+      value:          inputControl.propType('onChange', React.PropTypes.array),
+
       onChange:       React.PropTypes.func,
 
       valueField:     React.PropTypes.string,
       textField:      React.PropTypes.string,
+
+      searchTerm:     inputControl.propType('onSearch', React.PropTypes.string),
+      open:           inputControl.propType('onOpen',   React.PropTypes.bool),
 
       tagComponent:   React.PropTypes.func,
       itemComponent:  React.PropTypes.func,
@@ -48,21 +55,29 @@ var btn = require('../common/btn.jsx')
 module.exports = React.createClass({
 
   displayName: 'Select',
-  
-  mixins: [ 
-    require('../mixins/DataHelpersMixin'),
+
+  mixins: [
+    inputControl.mixin,
+    require('../mixins/WidgetUtilMixin'),
     require('../mixins/DataFilterMixin'),
+    require('../mixins/DataHelpersMixin'),
     require('../mixins/RtlParentContextMixin'),
-    require('../mixins/DataIndexStateMixin')('focusedIndex') 
+    require('../mixins/DataIndexStateMixin')('focusedIndex')
   ],
 
   propTypes: propTypes,
+
+  controlledValuesHandlerMap: {
+    onOpen:   'open',
+    onClose:  'open',
+    onSearch: 'searchTerm'
+  },
 
   getDefaultProps: function(){
     return {
       data: [],
       filter: 'startsWith',
-      
+
       messages: {
         emptyList:   "There are no items in this list",
         emptyFilter: "The filter returned no results"
@@ -71,18 +86,17 @@ module.exports = React.createClass({
   },
 
   getInitialState: function(){
-    var values = this.props.value == null 
-               ? [] 
-               : [].concat(this.props.value)
+    var values = this.props.value == null ? [] : [].concat(this.props.value)
+      , dataItems =  _.map(values, _.bind(this._dataItem, this, this.props.data))
 
-    return {
-      open:  false,
-      processedData: this.process(this.props.data, this.props.value, ''),
-      focusedIndex:  0,
-      dataItems: _.map(values, function(item){
-        return this._dataItem(this.props.data, item)
-      }, this)
-    }
+    return inputControl.defaults(this.props,
+      {
+        open:       false,
+        searchTerm: '',
+        processedData: this.process(this.props.data, values, ''),
+        focusedIndex:  0,
+        dataItems: dataItems
+      })
   },
 
   componentWillReceiveProps: function(nextProps) {
@@ -90,10 +104,9 @@ module.exports = React.createClass({
       , items = this.process(
           nextProps.data
         , nextProps.value
-        , this.state.searchTerm)
+        , this.get('searchTerm', nextProps))
 
     this.setState({
-      //searchTerm: '',
       processedData: items,
       dataItems: _.map(values, function(item){
         return this._dataItem(nextProps.data, item)
@@ -101,18 +114,19 @@ module.exports = React.createClass({
     })
   },
 
-  render: function(){ 
+  render: function(){
     var enabled = !(this.props.disabled === true || this.props.readOnly === true)
       , listID  = this._id('_listbox')
       , optID   = this._id('_option')
       , items   = this._data()
-      , values  = this.state.dataItems;
-      
+      , values  = this.state.dataItems
+      , isOpen  = this.get('open');
+
     return mergeIntoProps(
       _.omit(this.props, _.keys(propTypes)),
       <div ref="element"
            onKeyDown={this._maybeHandle(this._keyDown)}
-           onFocus={this._maybeHandle(_.partial(this._focus, true), true)} 
+           onFocus={this._maybeHandle(_.partial(this._focus, true), true)}
            onBlur ={_.partial(this._focus, false)}
            tabIndex="-1"
            className={cx({
@@ -120,52 +134,52 @@ module.exports = React.createClass({
               'rw-widget':         true,
               'rw-state-focus':    this.state.focused,
               'rw-state-disabled': this.props.disabled === true,
-              'rw-state-readonly':  this.props.readOnly === true,
-              'rw-open':           this.state.open,
+              'rw-state-readonly': this.props.readOnly === true,
+              'rw-open':           isOpen,
               'rw-rtl':            this.isRtl()
             })}>
         <div className='rw-select-wrapper' onClick={this._maybeHandle(this._click)}>
           { this.props.busy &&
             <i className="rw-i rw-loading"></i>
           }
-          <TagList 
+          <TagList
             ref='tagList'
-            value={values} 
-            textField={this.props.textField} 
+            value={values}
+            textField={this.props.textField}
             valueField={this.props.valueField}
             valueComponent={this.props.tagComponent}
             disabled={this.props.disabled}
             readOnly={this.props.readOnly}
             onDelete={this._delete}/>
-          <SelectInput 
+          <SelectInput
             ref='input'
-            aria-activedescendent={ this.state.open ? optID : undefined }
-            aria-expanded={ this.state.open }
+            aria-activedescendent={isOpen ? optID : undefined }
+            aria-expanded={isOpen }
             aria-busy={!!this.props.busy}
             aria-owns={listID}
             aria-haspopup={true}
-            value={this.state.searchTerm} 
+            value={this.get('searchTerm')}
             disabled={this.props.disabled === true}
             readOnly={this.props.readOnly === true}
             placeholder={this._placeholder()}
             onChange={this._typing}/>
         </div>
-        <Popup open={this.state.open} onRequestClose={this.close} duration={this.props.duration}>
+        <Popup open={isOpen} onRequestClose={this.close} duration={this.props.duration}>
           <div>
             <List ref="list"
               id={listID}
               optID={optID}
               aria-autocomplete='list'
-              aria-hidden={ !this.state.open }
+              aria-hidden={ !isOpen }
               style={{ maxHeight: 200, height: 'auto' }}
               data={items}
-              textField={this.props.textField} 
+              textField={this.props.textField}
               valueField={this.props.valueField}
               focusedIndex={this.state.focusedIndex}
               onSelect={this._maybeHandle(this._onSelect)}
               listItem={this.props.itemComponent}
               messages={{
-                emptyList: this.props.data.length 
+                emptyList: this.props.data.length
                   ? this.props.messages.emptyFilter
                   : this.props.messages.emptyList
               }}/>
@@ -187,20 +201,20 @@ module.exports = React.createClass({
 
   _click: function(e){
     this._focus(true)
-    !this.state.open && this.open()
+    !this.get('open') && this.open()
   },
 
   _focus: function(focused, e){
     var self = this;
 
     if (this.props.disabled === true )
-      return 
+      return
 
     clearTimeout(self.timer)
 
     self.timer = setTimeout(function(){
-      if(focused) self.refs.input.focus() 
-      else        { 
+      if(focused) self.refs.input.focus()
+      else        {
         self.close()
         self.refs.tagList.clear()
       }
@@ -211,20 +225,22 @@ module.exports = React.createClass({
   },
 
   _typing: function(e){
+
+    if ( !this.notify('onSearch', [ e.target.value ]) )
+      return
+
     var items = this.process(this.props.data, this.props.value, e.target.value);
 
+    this.open()
     this.setState({
       searchTerm: e.target.value,
       processedData: items,
-      open: this.state.open || (this.state.open === false),
-      focusedIndex: items.length >= this.state.focusedIndex 
-        ? 0 
-        : this.state.focusedIndex
+      focusedIndex: 0,
     })
   },
 
   _onSelect: function(data){
-    if( data === undefined ) 
+    if( data === undefined )
       return //handle custom tags maybe here?
 
     this.change(this.state.dataItems.concat(data))
@@ -235,8 +251,8 @@ module.exports = React.createClass({
   _keyDown: function(e){
     var key = e.key
       , alt = e.altKey
-      , searching = !!this.state.searchTerm
-      , isOpen = this.state.open;
+      , searching = !!this.get('searchTerm')
+      , isOpen = this.get('open');
 
     if ( key === 'ArrowDown') {
       if ( isOpen ) this.setFocusedIndex(this.nextFocusedIndex())
@@ -250,12 +266,12 @@ module.exports = React.createClass({
     else if ( key === 'End'){
       if ( isOpen ) this.setFocusedIndex(this._data().length - 1)
       else          this.refs.tagList.last()
-    }  
+    }
     else if (  key === 'Home'){
       if ( isOpen ) this.setFocusedIndex(0)
       else          this.refs.tagList.first()
     }
-    else if ( isOpen && key === 'Enter' ) 
+    else if ( isOpen && key === 'Enter' )
       this._onSelect(this._data()[this.state.focusedIndex])
 
     else if ( key === 'Escape')
@@ -265,7 +281,7 @@ module.exports = React.createClass({
       this.refs.tagList.prev()
 
     else if ( !searching && key === 'ArrowRight')
-      this.refs.tagList.next() 
+      this.refs.tagList.next()
 
     else if ( !searching && key === 'Delete')
       this.refs.tagList.removeCurrent()
@@ -275,55 +291,48 @@ module.exports = React.createClass({
   },
 
   change: function(data){
-    var change = this.props.onChange 
-
-    if ( change ) 
-      change(data) 
+    this.notify('onChange', [data])
   },
 
   open: function(){
-    if (!(this.props.disabled === true || this.props.readOnly === true))
-      this.setState({ open: true })
+    var disabled = this.props.disabled === true || this.props.readOnly === true;
+
+    if ( !disabled && !this.get('open'))
+      this.notify('onOpen', undefined, { open: true })
   },
 
   close: function(){
-    this.setState({ open: false })
+    if ( !!this.get('open') )
+      this.notify('onClose', undefined, { open: false })
   },
 
   toggle: function(e){
-    this.state.open 
-      ? this.close() 
+   this.get('open')
+      ? this.close()
       : this.open()
   },
 
   process: function(data, values, searchTerm){
-    var items = _.reject(data, function(i){
+    var items = data;
+
+    if( searchTerm)
+      items = this.filter(items, searchTerm)
+
+    items = _.reject(items, function(i){
         return _.any(
             values
           , _.partial(this._valueMatcher, i)
           , this)
       }, this)
 
-    if( searchTerm)
-      items = this.filter(items, searchTerm)
-
     return items
   },
 
   _placeholder: function(){
-    return (this.props.value || []).length 
-      ? '' 
+    return (this.props.value || []).length
+      ? ''
       : (this.props.placeholder || '')
-  },
-
-  _maybeHandle: function(handler, disabledOnly){
-    if ( !(this.props.disabled === true || (!disabledOnly && this.props.readOnly === true)))
-      return handler
-  },
-
-  _id: function(suffix){
-    this._id_ || (this._id_ = _.uniqueId('rw_'))
-    return (this.props.id || this._id_)  + suffix
   }
+
 })
 

@@ -87,15 +87,17 @@ module.exports = React.createClass({
   },
 
   isDisabled: function(val, isIdx) {
+    var disabled = this.props.disabled === true || this.props.disabled === 'disabled'
     if(isIdx) val = this.props.value[val]
 
-    return this.props.disabled === true || this._dataIndexOf(this.props.disabled || [], val) !== -1
+    return disabled || this._dataIndexOf(this.props.disabled || [], val) !== -1
   },
 
   isReadOnly: function(val, isIdx) {
+    var readOnly = this.props.readOnly === true || this.props.readOnly === 'readonly'
     if(isIdx) val = this.props.value[val]
 
-    return this.props.readOnly === true || this._dataIndexOf(this.props.readOnly || [], val) !== -1
+    return readOnly || this._dataIndexOf(this.props.readOnly || [], val) !== -1
   },
 
   removeNext: function(){

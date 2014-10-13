@@ -2,6 +2,7 @@
 
 var _ = require('lodash')
   , React = require('react')
+  , compat = require('./compat')
   , RESERVED = {
       className: resolve(joinClasses),
       children:   _.noop,
@@ -33,7 +34,7 @@ module.exports = {
 
   cloneWithProps: function (child, props) {
     var newProps = mergeProps(_.clone(props), child.props)
-      , version  = _.map(React.version.split('.'), parseFloat);
+      , version  = compat.version();
 
     if (!_.has(newProps, 'children') && _.has(child.props, 'children'))
       newProps.children = child.props.children;

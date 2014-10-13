@@ -37,24 +37,24 @@ module.exports = React.createClass({
   },
 
 	componentDidMount: function(){
-    this.close(0)
+    !this.props.open && this.close(0)
 	},
 
-  componentWillReceiveProps: function(nextProps) {
-    this.setState({
-      contentChanged: childKey(nextProps.children) !== childKey(this.props.children)
-    })
-  },
+  // componentWillReceiveProps: function(nextProps) {
+  //   this.setState({
+  //     contentChanged: childKey(nextProps.children) !== childKey(this.props.children)
+  //   })
+  // },
 
   componentDidUpdate: function(pvProps, pvState){
     var self = this
-      , closing =  pvProps.open && !this.props.open
-      , opening = !pvProps.open && this.props.open
-      , same    = pvProps.open === this.props.open;
+      , closing = pvProps.open && !this.props.open
+      , opening = !pvProps.open && this.props.open;
 
     if (opening)      self.open()
     else if (closing) self.close()
   },
+
 
 	render: function(){
     var style   = _.extend({}, this.props.style || {}, { overflow: 'hidden', position: 'absolute', zIndex: 1005 })
